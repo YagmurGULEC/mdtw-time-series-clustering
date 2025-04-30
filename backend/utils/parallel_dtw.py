@@ -12,8 +12,6 @@ def scalar_to_vector_euclidean(a, b):
 data = [
     (f"person_{i}", [{"time": np.random.rand(3).tolist()}]) for i in range(10_000)
    
-   
-    
 ]
 
 rdd = spark.sparkContext.parallelize(data)

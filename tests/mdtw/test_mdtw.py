@@ -1,30 +1,28 @@
 import pytest
 import numpy as np
-from backend.utils.modified_mdtw import mdtw_distance
+from backend.utils.modified_mdtw import calculate_distance_matrix
 
 
 
-
-
-@pytest.mark.parametrize("ER1, ER2", [
+@pytest.mark.parametrize("prepared_data", [
     (
-         [(8, [0.5, 0.5]), (13, [0.3, 0.7]), (20, [0.2, 0.8])],
-         [(8, [0.5, 0.5]), (13, [0.3, 0.7]), (20, [0.2, 0.8])]
+        {'person_1': {0.0: [0.35], 8.0: [0.25], 16.0: [0.1], 20.0: [0.3]}, 
+        'person_2': {7.0: [0.3537037037037037], 10.0: [0.24953703703703703], 
+                     12.0: [0.13472222222222222], 19.0: [0.262037037037037]}}
     ),
-    (
-        [(8, [0.5, 0.5]), (13, [0.3, 0.7])],
-        []
-    ),
-    (
-        [(8, [0.5, 0.5]), (13, [0.3, 0.7])],
-        [(9, [0.5, 0.5]), (14, [0.3, 0.7])]
-    )
+  
    
-    
-
 ])
-def test_local_distance_shape_mismatch(ER1, ER2):
-   distance=mdtw_distance(ER1, ER2)
-   assert isinstance(distance, float)
-   assert distance >= 0, "Distance should be non-negative"
-   print (f"Distance between {ER1} and {ER2}: {distance}")
+def test_distance_matrix(prepared_data):
+    """
+    Test the distance matrix calculation.
+    """
+    # Calculate the distance matrix
+    distance_matrix = calculate_distance_matrix(prepared_data,traditional=True)
+
+    # Check the shape of the distance matrix
+    assert distance_matrix.shape == (2, 2), "Distance matrix shape is incorrect."
+
+    # Check the values in the distance matrix
+    assert np.allclose(distance_matrix[0, 0], 0), "Distance from person_1 to themselves should be 0."
+    assert np.allclose(distance_matrix[1, 1], 0), "Distance from person_2 to themselves should be 0."

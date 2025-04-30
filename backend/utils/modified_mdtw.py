@@ -1,11 +1,11 @@
 import numpy as np
 from itertools import zip_longest
 from .plotting_tools import create_time_series_plot, plot_heatmap
-def mdtw_distance(ER1, ER2, delta=23, beta=1, alpha=2):
+def mdtw_distance(ER1, ER2, traditional=False,delta=23, beta=1, alpha=2):
     m1 = len(ER1)
     m2 = len(ER2)
 
-    # Local distance matrix including matching with empty
+    # Local distance matrix including matching with empt`y
     deo = np.zeros((m1 + 1, m2 + 1))
 
     for i in range(m1 + 1):
@@ -19,7 +19,7 @@ def mdtw_distance(ER1, ER2, delta=23, beta=1, alpha=2):
                 ti, vi = ER1[i-1]
                 deo[i, j] = np.dot(vi, vi)
             else:
-                deo[i, j] = local_distance(ER1[i-1], ER2[j-1], delta, beta, alpha)
+                deo[i, j] = local_distance(ER1[i-1], ER2[j-1], traditional,delta, beta, alpha)
 
     # Global cost matrix
     dER = np.zeros((m1 + 1, m2 + 1))
@@ -42,7 +42,7 @@ def mdtw_distance(ER1, ER2, delta=23, beta=1, alpha=2):
 
 
 
-def local_distance(eo_i, eo_j, delta=23, beta=1, alpha=2):
+def local_distance(eo_i, eo_j,traditional=False,delta=23, beta=1, alpha=2):
     # eo_i and eo_j: (time, vector) tuples
    
     ti, vi = eo_i
@@ -64,7 +64,9 @@ def local_distance(eo_i, eo_j, delta=23, beta=1, alpha=2):
         raise ValueError("Nutrient values must be in the range [0, 1].")   
     W = np.eye(len(vi))  # Assume W = identity for now
     value_diff = (vi - vj).T @ W @ (vi - vj)
-
+    if traditional:
+        return value_diff
+    
     time_diff = (np.abs(ti - tj) / delta) ** alpha
     scale = 2 * beta * (vi.T @ W @ vj)
     
@@ -96,6 +98,7 @@ def generate_synthetic_data(num_people=5, min_meals=1, max_meals=5,min_calories=
 
 
 def prepare_person(person):
+    
     # Check if all nutrients have same length
     nutrients_lengths = [len(record['nutrients']) for record in person["records"]]
     
@@ -121,60 +124,48 @@ def prepare_person(person):
 
     return person_dict
 
-if __name__ == "__main__":
-    #Raw data from the database no guarantee of the order of the records according to time
-    data=[
-        {
-            'person_id': 'person_1',
-            'records': [
-                {'time':8, 'nutrients': [400,200]},
-              
-                {'time':20, 'nutrients': [200,400]},
-                {'time': 13, 'nutrients': [400,200]},
-            ]
-        },
-        {
-            'person_id': 'person_2',
-            'records': [
-                  {'time': 13, 'nutrients': [200,100]},
-                  {'time': 20, 'nutrients': [100,200]},
-                  {'time': 8, 'nutrients': [300,100]},
-                  {'time': 10, 'nutrients': [200,300]},
-             
-              ]
-        },
-       
-        {
-            'person_id': 'person_3',
-            'records': [
-                  {'time': 10, 'nutrients': [150,50]},
-                  {'time': 15, 'nutrients': [300,200]},
-              ]
-        },
-      
-    ]
-    prepared_data = {person['person_id']: prepare_person(person) for person in data}
-    n=len(prepared_data)
-    global_cost_matrix = np.zeros((n, n))
-    person_list= list(prepared_data.items())
-    print (person_list)
+
+
+def calculate_distance_matrix(prepared_data,traditional=False):
+    """
+    Calculate the distance matrix for the prepared data.
+    
+    Args:
+        prepared_data (dict): Dictionary containing prepared data for each person.
+        
+    Returns:
+        np.ndarray: Distance matrix.
+    """
+    n = len(prepared_data)
+    distance_matrix = np.zeros((n, n))
+    
     # Step 3: Compute pairwise distances
-    for i, (id1, records1) in enumerate(person_list):
-        for j, (id2, records2) in enumerate(person_list):
+    for i, (id1, records1) in enumerate(prepared_data.items()):
+        for j, (id2, records2) in enumerate(prepared_data.items()):
             if i < j:  # Only upper triangle
                 # zip_longest over (time, nutrients) pairs
-                ER1= list(records1.items())
-                ER2= list(records2.items())
+                ER1 = list(records1.items())
+                ER2 = list(records2.items())
                 aligned_ER1 = []
                 aligned_ER2 = []
-                for pair1,pair2 in zip_longest(ER1, ER2, fillvalue=(None, [])):
+                for pair1, pair2 in zip_longest(ER1, ER2, fillvalue=(None, [])):
                     time1, nut1 = pair1
                     time2, nut2 = pair2
                     aligned_ER1.append((time1, nut1))
                     aligned_ER2.append((time2, nut2))
-    #             print (aligned_ER1)
-    #             print (aligned_ER2)
-                distance = mdtw_distance(aligned_ER1, aligned_ER2)
-                global_cost_matrix[i, j] = distance
-                global_cost_matrix[j, i] = distance
-    plot_heatmap(global_cost_matrix, "Global Cost Matrix")
+           
+                distance = mdtw_distance(aligned_ER1, aligned_ER2, traditional)
+                
+                distance_matrix[i, j] = distance
+                distance_matrix[j, i] = distance
+                
+    return distance_matrix
+
+if __name__ == "__main__":
+    #Raw data from the database no guarantee of the order of the records according to time
+    data= generate_synthetic_data(num_people=5, min_meals=1, max_meals=5,min_calories=200,max_calories=800)
+    prepared_data = {person['person_id']: prepare_person(person) for person in data}
+    print(prepared_data)
+    # distance_matrix = calculate_distance_matrix(prepared_data,traditional=False)
+    # print("Distance Matrix:")
+    # print(distance_matrix)
