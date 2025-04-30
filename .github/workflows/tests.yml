@@ -1,15 +1,9 @@
 name: Python CI with uv
-services:
-  dynamodb:
-    image: amazon/dynamodb-local
-    ports:
-      - 8000:8000
+
 on:
   push:
-    branches: [main]
-  pull_request:
-    branches: [main]
-
+    branches: [mdtw]
+  
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -38,5 +32,5 @@ jobs:
 
       - name: 🧪 Run tests
         run: |
-          uv pip install pytest pytest-asyncio
-          pytest
+          uv pip install pytest numpy 
+          uv run pytest -s tests/mdtw

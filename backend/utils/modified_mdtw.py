@@ -1,7 +1,4 @@
 import numpy as np
-from sklearn.manifold import MDS
-import matplotlib.pyplot as plt
-from pyspark import SparkContext
 from itertools import zip_longest
 
 def mdtw_distance(ER1, ER2, delta=23, beta=1, alpha=2):
