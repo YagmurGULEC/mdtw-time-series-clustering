@@ -28,7 +28,7 @@ jobs:
 
       - name: 📦 Install dependencies with uv
         run: |
-          uv pip install --system pytest numpy
+          uv pip install --system pytest numpy matplotlib
 
       - name: 🧪 Run tests
         run: |
