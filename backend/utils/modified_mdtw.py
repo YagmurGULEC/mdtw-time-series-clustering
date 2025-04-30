@@ -1,14 +1,13 @@
 import numpy as np
 from itertools import zip_longest
-
+from .plotting_tools import create_time_series_plot, plot_heatmap
 def mdtw_distance(ER1, ER2, delta=23, beta=1, alpha=2):
     m1 = len(ER1)
     m2 = len(ER2)
 
     # Local distance matrix including matching with empty
     deo = np.zeros((m1 + 1, m2 + 1))
-    print (ER1)
-    print (ER2)
+
     for i in range(m1 + 1):
         for j in range(m2 + 1):
             if i == 0 and j == 0:
@@ -73,33 +72,7 @@ def local_distance(eo_i, eo_j, delta=23, beta=1, alpha=2):
   
     return distance
 
-def create_time_series_plot(data):
-    plt.figure(figsize=(10, 5))
-    for person in data:
-        person_id = person['person_id']
-        # Extract time and nutrient values
-        times = [record['time'] for record in person['records']]
-        nutrients = [np.mean(record['nutrients']) for record in person['records']]
-        
-        # Instead of plotting inside a loop, plot all at once
-        plt.plot(times,nutrients, marker='o', label=person_id)
 
-    plt.title('Time Series Plot for Nutrient Data')
-    plt.xlabel('Time')
-    plt.ylabel('Nutrient Value')
-    plt.legend()
-    plt.grid(True)
-    plt.savefig('time_series.png')
-def plot_heatmap(matrix, title):
-    plt.figure(figsize=(8, 6))
-    plt.imshow(matrix, cmap='hot', interpolation='nearest')
-    plt.colorbar()
-    plt.title(title)
-    plt.xticks(ticks=range(len(matrix)), labels=[f'Person {i+1}' for i in range(len(matrix))])
-    plt.yticks(ticks=range(len(matrix)), labels=[f'Person {i+1}' for i in range(len(matrix))])
-    plt.xticks(rotation=45)
-    plt.yticks(rotation=45)
-    plt.savefig('heatmap.png')
 
 def generate_synthetic_data(num_people=5, min_meals=1, max_meals=5,min_calories=200,max_calories=800):
     data = []
@@ -202,8 +175,6 @@ if __name__ == "__main__":
     #             print (aligned_ER1)
     #             print (aligned_ER2)
                 distance = mdtw_distance(aligned_ER1, aligned_ER2)
-    #             print (f"Distance between {id1} and {id2}: {distance}")
-    #             global_cost_matrix[i, j] = distance
-    #             global_cost_matrix[j, i] = distance  # Because distance is symmetric
-    # # # Step 4: Plot the heatmap
-    # print (global_cost_matrix)
+                global_cost_matrix[i, j] = distance
+                global_cost_matrix[j, i] = distance
+    plot_heatmap(global_cost_matrix, "Global Cost Matrix")
