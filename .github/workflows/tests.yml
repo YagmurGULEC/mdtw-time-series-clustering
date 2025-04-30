@@ -28,9 +28,9 @@ jobs:
 
       - name: 📦 Install dependencies with uv
         run: |
-          uv pip install -r requirements.txt
+          uv pip install --system -r requirements.txt
 
       - name: 🧪 Run tests
         run: |
-          uv pip install pytest numpy 
+          uv pip install --system pytest numpy
           uv run pytest -s tests/mdtw
