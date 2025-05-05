@@ -1,0 +1,35 @@
+name: Python CI with uv
+
+on:
+  push:
+    branches: [mdtw]
+  
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        python-version: ["3.12"]
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v3
+
+      - name: 🐍 Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: 🚀 Install uv package manager
+        run: |
+          curl -Ls https://astral.sh/uv/install.sh | sh
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+
+      - name: 📦 Install dependencies with uv
+        run: |
+          uv pip install --system pytest numpy matplotlib
+
+      - name: 🧪 Run tests
+        run: |
+          uv run pytest -s tests/mdtw
