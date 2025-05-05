@@ -1,4 +1,4 @@
-from backend.utils.modified_mdtw  import prepare_person
+from data.utils.modified_mdtw  import prepare_person
 import pytest
 import numpy as np
 

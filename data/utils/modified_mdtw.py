@@ -1,11 +1,23 @@
 import numpy as np
 from itertools import zip_longest
-from .plotting_tools import create_time_series_plot, plot_heatmap
-def mdtw_distance(ER1, ER2, traditional=False,delta=23, beta=1, alpha=2):
+
+def mdtw_distance(ER1, ER2, delta=23, beta=1, alpha=2):
+    """
+    Calculate the modified DTW distance between two sequences of events.
+    Args:
+        ER1 (list): First sequence of events (time, nutrients).
+        ER2 (list): Second sequence of events (time, nutrients).
+        delta (float): Time scaling factor.
+        beta (float): Weighting factor for time difference.
+        alpha (float): Exponent for time difference scaling.
+    
+    Returns:
+        float: Modified DTW distance.
+    """
     m1 = len(ER1)
     m2 = len(ER2)
-
-    # Local distance matrix including matching with empt`y
+   
+    # Local distance matrix including matching with empty
     deo = np.zeros((m1 + 1, m2 + 1))
 
     for i in range(m1 + 1):
@@ -14,14 +26,15 @@ def mdtw_distance(ER1, ER2, traditional=False,delta=23, beta=1, alpha=2):
                 deo[i, j] = 0
             elif i == 0:
                 tj, vj = ER2[j-1]
-                deo[i, j] = np.dot(vj, vj)  # cost of matching to empty
+                deo[i, j] = np.dot(vj, vj)  
             elif j == 0:
                 ti, vi = ER1[i-1]
                 deo[i, j] = np.dot(vi, vi)
             else:
-                deo[i, j] = local_distance(ER1[i-1], ER2[j-1], traditional,delta, beta, alpha)
+                deo[i, j]=local_distance(ER1[i-1], ER2[j-1], delta, beta, alpha)
+        
 
-    # Global cost matrix
+    # # Global cost matrix
     dER = np.zeros((m1 + 1, m2 + 1))
     dER[0, 0] = 0
 
@@ -37,13 +50,25 @@ def mdtw_distance(ER1, ER2, traditional=False,delta=23, beta=1, alpha=2):
                 dER[i-1, j] + deo[i, 0],     # Match i to empty
                 dER[i, j-1] + deo[0, j]      # Match j to empty
             )
+   
+    
+    return dER[m1, m2]  # Return the final cost
 
-    return dER[m1, m2]
 
 
-
-def local_distance(eo_i, eo_j,traditional=False,delta=23, beta=1, alpha=2):
-    # eo_i and eo_j: (time, vector) tuples
+def local_distance(eo_i, eo_j,delta=23, beta=1, alpha=2):
+    """
+    Calculate the local distance between two events.
+    Args:
+        eo_i (tuple): Event i (time, nutrients).
+        eo_j (tuple): Event j (time, nutrients).
+        delta (float): Time scaling factor.
+        beta (float): Weighting factor for time difference.
+        alpha (float): Exponent for time difference scaling.
+    Returns:
+        float: Local distance.
+    """
+    
    
     ti, vi = eo_i
     tj, vj = eo_j
@@ -52,24 +77,15 @@ def local_distance(eo_i, eo_j,traditional=False,delta=23, beta=1, alpha=2):
     vj = np.array(vj)
 
     if vi.shape != vj.shape:
-        if len(vi) == 0:
-            return np.sum(vj ** 2)
-        elif len(vj) == 0:
-            return np.sum(vi ** 2)
-        else:
-            raise ValueError("Mismatch in feature dimensions.")
+        raise ValueError("Mismatch in feature dimensions.")
     if np.any(vi < 0) or np.any(vj < 0):
         raise ValueError("Nutrient values must be non-negative.")
     if np.any(vi>1 ) or np.any(vj>1):
         raise ValueError("Nutrient values must be in the range [0, 1].")   
     W = np.eye(len(vi))  # Assume W = identity for now
     value_diff = (vi - vj).T @ W @ (vi - vj)
-    if traditional:
-        return value_diff
-    
     time_diff = (np.abs(ti - tj) / delta) ** alpha
     scale = 2 * beta * (vi.T @ W @ vj)
-    
     distance = value_diff + scale * time_diff
   
     return distance
@@ -77,6 +93,17 @@ def local_distance(eo_i, eo_j,traditional=False,delta=23, beta=1, alpha=2):
 
 
 def generate_synthetic_data(num_people=5, min_meals=1, max_meals=5,min_calories=200,max_calories=800):
+    """
+    Generate synthetic data for a given number of people.
+    Args:
+        num_people (int): Number of people to generate data for.
+        min_meals (int): Minimum number of meals per person.
+        max_meals (int): Maximum number of meals per person.
+        min_calories (int): Minimum calories per meal.
+        max_calories (int): Maximum calories per meal.
+    Returns:
+        list: List of dictionaries containing synthetic data for each person.
+    """
     data = []
     np.random.seed(42)  # For reproducibility
     for person_id in range(1, num_people + 1):
@@ -98,6 +125,13 @@ def generate_synthetic_data(num_people=5, min_meals=1, max_meals=5,min_calories=
 
 
 def prepare_person(person):
+    """
+    Prepare a person's data for distance calculation.
+    Args:
+        person (dict): Dictionary containing person's data.
+    Returns:
+        dict: Dictionary with time as keys and normalized nutrient vectors as values.
+    """
     
     # Check if all nutrients have same length
     nutrients_lengths = [len(record['nutrients']) for record in person["records"]]
@@ -126,7 +160,7 @@ def prepare_person(person):
 
 
 
-def calculate_distance_matrix(prepared_data,traditional=False):
+def calculate_distance_matrix(prepared_data):
     """
     Calculate the distance matrix for the prepared data.
     
@@ -143,29 +177,26 @@ def calculate_distance_matrix(prepared_data,traditional=False):
     for i, (id1, records1) in enumerate(prepared_data.items()):
         for j, (id2, records2) in enumerate(prepared_data.items()):
             if i < j:  # Only upper triangle
-                # zip_longest over (time, nutrients) pairs
+            
                 ER1 = list(records1.items())
                 ER2 = list(records2.items())
-                aligned_ER1 = []
-                aligned_ER2 = []
-                for pair1, pair2 in zip_longest(ER1, ER2, fillvalue=(None, [])):
-                    time1, nut1 = pair1
-                    time2, nut2 = pair2
-                    aligned_ER1.append((time1, nut1))
-                    aligned_ER2.append((time2, nut2))
-           
-                distance = mdtw_distance(aligned_ER1, aligned_ER2, traditional)
                 
-                distance_matrix[i, j] = distance
-                distance_matrix[j, i] = distance
+                distance_matrix[i, j] = mdtw_distance(ER1, ER2)
+                distance_matrix[j, i] = distance_matrix[i, j]  # Symmetric matrix
                 
     return distance_matrix
 
-if __name__ == "__main__":
-    #Raw data from the database no guarantee of the order of the records according to time
-    data= generate_synthetic_data(num_people=5, min_meals=1, max_meals=5,min_calories=200,max_calories=800)
-    prepared_data = {person['person_id']: prepare_person(person) for person in data}
-    print(prepared_data)
-    # distance_matrix = calculate_distance_matrix(prepared_data,traditional=False)
-    # print("Distance Matrix:")
-    # print(distance_matrix)
+# Find the time and fraction of their largest eating occasion
+def get_largest_event(record):
+    """
+    Find the time and fraction of the largest eating occasion in a person's record.
+    Args:
+        record (dict): Dictionary containing person's data.
+    Returns:
+        tuple: Time of the largest eating occasion and its fraction of total nutrients.
+    """
+    total = sum(v[0] for v in record.values())
+    largest_time, largest_value = max(record.items(), key=lambda x: x[1][0])
+    fractional_value = largest_value[0] / total if total > 0 else 0
+    return largest_time, fractional_value
+

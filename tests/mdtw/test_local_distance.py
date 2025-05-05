@@ -1,4 +1,4 @@
-from backend.utils.modified_mdtw  import local_distance
+from data.utils.modified_mdtw  import local_distance
 import pytest
 import numpy as np
 
@@ -28,7 +28,7 @@ def test_local_distance_same_time_different_nutrient(pair1, pair2):
     assert res1==res2, f"Expected {res1}, but got {res2}"
 
 
-#For skipped meals 
+#If it gives the error for different size of nutrient
 @pytest.mark.parametrize("pair1, pair2", [
     (
         (8.0, [0.5]),
@@ -47,15 +47,8 @@ def test_local_distance_same_time_different_nutrient(pair1, pair2):
     ]
 )
 def test_local_distance_skipped_meals(pair1, pair2):
-    v1=pair1[1]
-    v2=pair2[1]
-    if len(v1) == 0:
-        res1 = np.sum(np.array(v2) ** 2)
-    else:
-        res1 = np.sum(np.array(v1) ** 2)
-    
-   
-    res2=local_distance(pair1, pair2)
-    assert res1==res2, f"Expected {res1}, but got {res2}"
+    with pytest.raises(ValueError):
+        local_distance(pair1, pair2)
+
     
     
