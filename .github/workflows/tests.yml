@@ -2,7 +2,7 @@ name: Python CI with uv
 
 on:
   push:
-    branches: [mdtw]
+    branches: [main]
   
 jobs:
   test:
