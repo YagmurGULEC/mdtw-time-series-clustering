@@ -28,7 +28,7 @@ jobs:
 
       - name: 📦 Install dependencies with uv
         run: |
-          uv pip install --system pytest numpy matplotlib
+          uv pip install --system pytest pytest-pytest-benchmark memory-profiler numpy matplotlib
 
       - name: 🧪 Run tests
         run: |
