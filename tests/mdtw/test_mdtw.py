@@ -1,7 +1,7 @@
 import pytest
 import numpy as np
-from data.utils.modified_mdtw import calculate_distance_matrix
-from data.utils.modified_mdtw import mdtw_distance,mdtw_distance_optimized
+
+from data.utils.modified_mdtw import (mdtw_distance,mdtw_distance_optimized)
 
 
 # Test data
@@ -169,8 +169,6 @@ def test_performance(sample_data, benchmark):
     
     # Benchmark the function
     result = benchmark(mdtw_distance_optimized, long_ER1, long_ER2)
-    
-
     # Just check that it returns a valid result
     assert isinstance(result, float) or isinstance(result, np.float32) or isinstance(result, np.float64)
     assert result >= 0

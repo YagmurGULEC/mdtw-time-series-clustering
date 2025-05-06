@@ -1,8 +1,8 @@
 import numpy as np
 from itertools import zip_longest
+from typing import List, Dict, Tuple
 
-
-def mdtw_distance_optimized(ER1, ER2, delta=23, beta=1, alpha=2):
+def mdtw_distance_optimized(ER1: List[Tuple[float, List[float]]], ER2: List[Tuple[float, List[float]]], delta: float = 23, beta: float = 1, alpha: float = 2) -> float:
     """
     Calculate the modified DTW distance between two sequences of events
     with optimized memory usage.
@@ -61,7 +61,7 @@ def mdtw_distance_optimized(ER1, ER2, delta=23, beta=1, alpha=2):
     # Final result is in prev_row due to the last swap
     return prev_row[m2]
 
-def mdtw_distance(ER1, ER2, delta=23, beta=1, alpha=2):
+def mdtw_distance(ER1: List[Tuple[float, List[float]]], ER2: List[Tuple[float, List[float]]], delta: float = 23, beta: float = 1, alpha: float = 2) -> float:
     """
     Calculate the modified DTW distance between two sequences of events.
     Args:
@@ -115,8 +115,7 @@ def mdtw_distance(ER1, ER2, delta=23, beta=1, alpha=2):
     return dER[m1, m2]  # Return the final cost
 
 
-
-def local_distance(eo_i, eo_j,delta=23, beta=1, alpha=2):
+def local_distance(eo_i: Tuple[float, List[float]], eo_j: Tuple[float, List[float]], delta: float = 23, beta: float = 1, alpha: float = 2):
     """
     Calculate the local distance between two events.
     Args:
@@ -152,7 +151,7 @@ def local_distance(eo_i, eo_j,delta=23, beta=1, alpha=2):
 
 
 
-def generate_synthetic_data(num_people=5, min_meals=1, max_meals=5,min_calories=200,max_calories=800):
+def generate_synthetic_data(num_people: int = 5, min_meals: int = 1, max_meals: int = 5, min_calories: int = 200, max_calories: int = 800):
     """
     Generate synthetic data for a given number of people.
     Args:
@@ -184,7 +183,7 @@ def generate_synthetic_data(num_people=5, min_meals=1, max_meals=5,min_calories=
     return data
 
 
-def prepare_person(person):
+def prepare_person(person: dict):
     """
     Prepare a person's data for distance calculation.
     Args:
@@ -220,7 +219,7 @@ def prepare_person(person):
 
 
 
-def calculate_distance_matrix(prepared_data):
+def calculate_distance_matrix(prepared_data: dict, callback: callable = None)-> np.ndarray:
     """
     Calculate the distance matrix for the prepared data.
     
@@ -241,13 +240,13 @@ def calculate_distance_matrix(prepared_data):
                 ER1 = list(records1.items())
                 ER2 = list(records2.items())
                 
-                distance_matrix[i, j] = mdtw_distance(ER1, ER2)
+                distance_matrix[i, j] = callback(ER1, ER2)
                 distance_matrix[j, i] = distance_matrix[i, j]  # Symmetric matrix
                 
     return distance_matrix
 
 # Find the time and fraction of their largest eating occasion
-def get_largest_event(record):
+def get_largest_event(record: dict) -> Tuple[float, float]:
     """
     Find the time and fraction of the largest eating occasion in a person's record.
     Args:
@@ -260,12 +259,4 @@ def get_largest_event(record):
     fractional_value = largest_value[0] / total if total > 0 else 0
     return largest_time, fractional_value
 
-if __name__ == "__main__":
-    
-    prepared_data = {
-        'person_1': {0.0: [0.35], 8.0: [0.25], 16.0: [0.1], 20.0: [0.3]},
-        'person_2': {7.0: [0.3], 10.0: [0.2], 12.0: [0.3], 19.0: [0.1]},
-        'person_3': {0.0: [0.5], 5.0: [0.5]}
-    }
-    distance_matrix = calculate_distance_matrix(prepared_data)
-    print(distance_matrix)
+
