@@ -1,6 +1,66 @@
 import numpy as np
 from itertools import zip_longest
 
+
+def mdtw_distance_optimized(ER1, ER2, delta=23, beta=1, alpha=2):
+    """
+    Calculate the modified DTW distance between two sequences of events
+    with optimized memory usage.
+    
+    Args:
+        ER1 (list): First sequence of events (time, nutrients).
+        ER2 (list): Second sequence of events (time, nutrients).
+        delta (float): Time scaling factor.
+        beta (float): Weighting factor for time difference.
+        alpha (float): Exponent for time difference scaling.
+         
+    Returns:
+        float: Modified DTW distance.
+    """
+    m1 = len(ER1)
+    m2 = len(ER2)
+    
+    # Only store two rows of the cost matrix at a time
+    prev_row = np.zeros(m2 + 1, dtype=np.float32)
+    curr_row = np.zeros(m2 + 1, dtype=np.float32)
+    
+    # Initialize first row (matching ER2 elements with empty)
+    for j in range(1, m2 + 1):
+        tj, vj = ER2[j-1]
+        empty_cost = np.dot(vj, vj)  # Compute once and reuse
+        prev_row[j] = prev_row[j-1] + empty_cost
+    
+    # Process rows one at a time
+    for i in range(1, m1 + 1):
+        ti, vi = ER1[i-1]
+        vi_dot = np.dot(vi, vi)  # Pre-compute for reuse
+        
+        # First column (matching ER1 elements with empty)
+        curr_row[0] = prev_row[0] + vi_dot
+        
+        # Fill current row
+        for j in range(1, m2 + 1):
+            tj, vj = ER2[j-1]
+            
+            # Calculate local distance only when needed
+            local_dist = local_distance(
+                (ti, vi), (tj, vj), delta, beta, alpha
+            )
+            
+            # Calculate DTW options
+            match_both = prev_row[j-1] + local_dist
+            match_i_to_empty = prev_row[j] + vi_dot
+            match_j_to_empty = curr_row[j-1] + np.dot(vj, vj)
+            
+            # Choose minimum path
+            curr_row[j] = min(match_both, match_i_to_empty, match_j_to_empty)
+        
+        # Swap rows for next iteration
+        prev_row, curr_row = curr_row, prev_row
+    
+    # Final result is in prev_row due to the last swap
+    return prev_row[m2]
+
 def mdtw_distance(ER1, ER2, delta=23, beta=1, alpha=2):
     """
     Calculate the modified DTW distance between two sequences of events.
@@ -200,3 +260,12 @@ def get_largest_event(record):
     fractional_value = largest_value[0] / total if total > 0 else 0
     return largest_time, fractional_value
 
+if __name__ == "__main__":
+    
+    prepared_data = {
+        'person_1': {0.0: [0.35], 8.0: [0.25], 16.0: [0.1], 20.0: [0.3]},
+        'person_2': {7.0: [0.3], 10.0: [0.2], 12.0: [0.3], 19.0: [0.1]},
+        'person_3': {0.0: [0.5], 5.0: [0.5]}
+    }
+    distance_matrix = calculate_distance_matrix(prepared_data)
+    print(distance_matrix)
