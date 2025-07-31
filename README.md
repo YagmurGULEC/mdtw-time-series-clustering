@@ -1,6 +1,6 @@
 # mdtw-time-series-clustering
 This project implements a complete data ingestion and analysis pipeline for time-series data using Modified Dynamic Time Warping (MDTW).
-
+You may read the Towards Data Science article: https://towardsdatascience.com/clustering-eating-behaviors-in-time-a-machine-learning-approach-to-preventive-health/
 [![Python CI with uv](https://github.com/YagmurGULEC/mdtw-time-series-clustering/actions/workflows/tests.yml/badge.svg)](https://github.com/YagmurGULEC/mdtw-time-series-clustering/actions/workflows/tests.yml)
 
 # What If *When* We Eat Matters As Much As *What* We Eat?
